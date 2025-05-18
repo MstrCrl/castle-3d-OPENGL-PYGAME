@@ -1,0 +1,48 @@
+CASTLE MAIN VIEW: 
+Zoom: 9.00, rot_x: -45.00, rot_y: -90.00
+
+VIEW 1: OUTER GATE
+Zoom: 8.00, rot_x: -51.00, rot_y: -90.00
+
+VIEW 2: VENDORS UNDER BRIDGE
+Zoom: 6.50, rot_x: -36.00, rot_y: -66.50
+
+VIEW 3: MARKET PLACE
+Zoom: 6.00, rot_x: -50.50, rot_y: -56.00
+
+VIEW 4: TAVERN
+Zoom: 7.00, rot_x: -49.50, rot_y: -48.50
+
+VIEW 5: BLACKSMITH
+Zoom: 5.50, rot_x: -54.50, rot_y: -24.00
+
+VIEW 6: PEASANT HUT
+Zoom: 6.50, rot_x: -52.50, rot_y: 7.50
+
+VIEW 7: FARM
+Zoom: 7.00, rot_x: -52.50, rot_y: 26.50
+
+VIEW 8: WINDMILL
+Zoom: 8.00, rot_x: -50.50, rot_y: 18.50
+
+VIEW 9: UPPER CLASS RESIDENTIAL
+Zoom: 7.00, rot_x: -49.50, rot_y: -138.50
+
+VIEW 10: POND
+Zoom: 7.00, rot_x: -62.50, rot_y: -142.50
+
+VIEW 11: CHAPPEL
+Zoom: 7.50, rot_x: -49.50, rot_y: -218.50
+
+VIEW 12: OUTER OUTPOST
+Zoom: 8.50, rot_x: -58.00, rot_y: -217.50
+
+VIEW 13: INNER GATE
+Zoom: 5.50, rot_x: -30.50, rot_y: -89.00
+
+VIEW 14: INNER OUTPOST
+Zoom: 7.00, rot_x: -24.50, rot_y: -153.00
+
+CASTLE TOP VIEW 
+Zoom: 10.50, rot_x: -13.00, rot_y: -449.00
+

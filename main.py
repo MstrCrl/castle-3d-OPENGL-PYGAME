@@ -7,12 +7,25 @@ from model_loader import create_textured_object
 from texture_loader import load_texture
 from textured_shader import create_shader_program
 
-def screen_to_world(x, y, width, height):
-    # Normalize device coordinates [-1, 1]
-    norm_x = (2.0 * x) / width - 1.0
-    norm_y = 1.0 - (2.0 * y) / height  # Flip y-axis
-    return norm_x, norm_y
-
+# Predefined camera views
+views = [
+    {"name": "CASTLE MAIN VIEW", "zoom": 9.0, "rot_x": -45.0, "rot_y": -90.0},
+    {"name": "OUTER GATE", "zoom": 8.0, "rot_x": -51.0, "rot_y": -90.0},
+    {"name": "VENDORS UNDER BRIDGE", "zoom": 6.5, "rot_x": -36.0, "rot_y": -66.5},
+    {"name": "MARKET PLACE", "zoom": 6.0, "rot_x": -50.5, "rot_y": -56.0},
+    {"name": "TAVERN", "zoom": 7.0, "rot_x": -49.5, "rot_y": -48.5},
+    {"name": "BLACKSMITH", "zoom": 5.5, "rot_x": -54.5, "rot_y": -24.0},
+    {"name": "PEASANT HUT", "zoom": 6.5, "rot_x": -52.5, "rot_y": 7.5},
+    {"name": "FARM", "zoom": 7.0, "rot_x": -52.5, "rot_y": 26.5},
+    {"name": "WINDMILL", "zoom": 8.0, "rot_x": -50.5, "rot_y": 18.5},
+    {"name": "UPPER CLASS RESIDENTIAL", "zoom": 7.0, "rot_x": -49.5, "rot_y": -138.5},
+    {"name": "POND", "zoom": 7.0, "rot_x": -62.5, "rot_y": -142.5},
+    {"name": "CHAPPEL", "zoom": 7.5, "rot_x": -49.5, "rot_y": -218.5},
+    {"name": "OUTER OUTPOST", "zoom": 8.5, "rot_x": -58.0, "rot_y": -217.5},
+    {"name": "INNER GATE", "zoom": 5.5, "rot_x": -30.5, "rot_y": -89.0},
+    {"name": "INNER OUTPOST", "zoom": 7.0, "rot_x": -24.5, "rot_y": -153.0},
+    {"name": "CASTLE TOP VIEW", "zoom": 10.5, "rot_x": -13.0, "rot_y": -449.0}
+]
 
 def main():
     pygame.init()
@@ -24,107 +37,111 @@ def main():
     shader = create_shader_program()
     glUseProgram(shader)
 
-    # Load both objects
-    vao_castle, ebo_castle, count_castle = create_textured_object("source\castle_vertices.txt", "source\castle_indices.txt")
-    # Load both textures
-    tex_castle = load_texture("source\castle.jpg")
+    vao_castle, ebo_castle, count_castle = create_textured_object("source\\castle_vertices.txt", "source\\castle_indices.txt")
+    tex_castle = load_texture("source\\castle.jpg")
 
     glUniform1i(glGetUniformLocation(shader, "texture1"), 0)
 
     model_loc = glGetUniformLocation(shader, "model")
     view_loc = glGetUniformLocation(shader, "view")
     proj_loc = glGetUniformLocation(shader, "projection")
-       
+
     proj = glm.perspective(glm.radians(100.0), display[0] / display[1], 0.1, 100.0)
     glUniformMatrix4fv(proj_loc, 1, GL_FALSE, glm.value_ptr(proj))
 
     clock = pygame.time.Clock()
-    angle = 0
     running = True
     position = glm.vec3(0, 1, 0)
-    
-    camera_distance = 10.0
+
+    # Start with the first view
+    view_index = 0
+    view_name = views[view_index]["name"]
+    rot_x = views[view_index]["rot_x"]
+    rot_y = views[view_index]["rot_y"]
+    camera_distance = views[view_index]["zoom"]
+
+    # Targets for interpolation
+    target_rot_x = rot_x
+    target_rot_y = rot_y
+    target_camera_distance = camera_distance
+
     mouse_down = False
-    rot_x = 0
-    rot_y = 0
     last_mouse_pos = (0, 0)
-    
-    
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
+            # Handle predefined view switching
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT:
+                    view_index = (view_index + 1) % len(views)
+                    view = views[view_index]
+                    view_name = view["name"]
+                    target_camera_distance = view["zoom"]
+                    target_rot_x = view["rot_x"]
+                    target_rot_y = view["rot_y"]
+                    print(f"Switched to: {view_name}")
+
+                elif event.key == pygame.K_LEFT:
+                    view_index = (view_index - 1) % len(views)
+                    view = views[view_index]
+                    view_name = view["name"]
+                    target_camera_distance = view["zoom"]
+                    target_rot_x = view["rot_x"]
+                    target_rot_y = view["rot_y"]
+                    print(f"Switched to: {view_name}")
+
+            # Mouse input
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 2:  # left click
-                        mx, my = pygame.mouse.get_pos()
-                        norm_x, norm_y = screen_to_world(mx, my, *display)
-                        position.x = norm_x * 10  # Scale for visibility
-                        position.y = norm_y * 8
-                        print(f"Moved object to: {position.x}, {position.y}")
-                    
                 if event.button == 4:
-                    camera_distance -= 0.5  # Zoom in
-                    camera_distance = max(1.0, camera_distance)  # Limit zoom in
+                    target_camera_distance -= 0.5
+                    target_camera_distance = max(1.0, target_camera_distance)
                 elif event.button == 5:
-                    camera_distance += 0.5  # Zoom out
+                    target_camera_distance += 0.5
 
-
-            #rotate the object using mouse
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        mouse_down = True
-                        last_mouse_pos = pygame.mouse.get_pos()
+                if event.button == 1:
+                    mouse_down = True
+                    last_mouse_pos = pygame.mouse.get_pos()
 
             if event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == 1:
-                        mouse_down = False
+                if event.button == 1:
+                    mouse_down = False
 
             if event.type == pygame.MOUSEMOTION and mouse_down:
-                    x, y = pygame.mouse.get_pos()
-                    dx = x - last_mouse_pos[0]
-                    dy = y - last_mouse_pos[1]
-                    rot_y += dx * 0.5
-                    rot_x += dy * 0.5
-                    last_mouse_pos = (x, y)
-        
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            position.x -= 0.05
-        if keys[pygame.K_RIGHT]:
-            position.x += 0.05
-        if keys[pygame.K_UP]:
-            position.y += 0.05
-        if keys[pygame.K_DOWN]:
-            position.y -= 0.05
+                x, y = pygame.mouse.get_pos()
+                dx = x - last_mouse_pos[0]
+                dy = y - last_mouse_pos[1]
+                target_rot_y += dx * 0.5
+                target_rot_x += dy * 0.5
+                last_mouse_pos = (x, y)
 
-        if keys[pygame.K_a]:
-            rotation_axis = glm.vec3(1.0, 0.0, 0.0)  # Rotate around X-axis
-        if keys[pygame.K_d]:
-            rotation_axis = glm.vec3(0.0, 1.0, 0.0)  # Rotate around Y-axis
+        # --- Smooth Interpolation ---
+        lerp_speed = 0.1  # Adjust for faster/slower transitions
+        camera_distance += (target_camera_distance - camera_distance) * lerp_speed
+        rot_x += (target_rot_x - rot_x) * lerp_speed
+        rot_y += (target_rot_y - rot_y) * lerp_speed
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
 
         view = glm.lookAt(glm.vec3(0, camera_distance, 0), glm.vec3(0, 0, 0), glm.vec3(0, 0, -1))
         glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm.value_ptr(view))
 
-        # Draw castle
         model1 = glm.mat4(1.0)
         model1 = glm.translate(model1, position)
         model1 = glm.rotate(model1, glm.radians(rot_x), glm.vec3(1, 0, 0))
         model1 = glm.rotate(model1, glm.radians(rot_y), glm.vec3(0, 1, 0))
-        model1 = glm.translate(model1, position)  # Move cube back
+        model1 = glm.translate(model1, position)
         glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm.value_ptr(model1))
+
         glBindTexture(GL_TEXTURE_2D, tex_castle)
         glBindVertexArray(vao_castle)
-        glDrawElements(GL_TRIANGLES, count_castle, GL_UNSIGNED_INT, None)   
+        glDrawElements(GL_TRIANGLES, count_castle, GL_UNSIGNED_INT, None)
 
         pygame.display.flip()
         clock.tick(config.FPS)
-        angle += 1
 
-    #idagdag dito sa delete
     glDeleteVertexArrays(1, [vao_castle])
     glDeleteBuffers(1, [ebo_castle])
     glDeleteProgram(shader)
